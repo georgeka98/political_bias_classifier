@@ -13,13 +13,22 @@ train_texts, test_texts, train_labels, test_labels, label_encoder = load_and_pre
     'data/allsides_balanced_news_headlines-texts.csv'
 )
 
-
-
 # Initialize model and tokenizer
 model, tokenizer = initialize_model(num_labels=len(label_encoder.classes_))
 
 # Set up device to use MPS if available, otherwise fall back to CPU
-device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+
+# srun -p Teach-Interactive --gres=gpu:1 --pty bash
+# RUN srun --gres=gpu:1 --pty bash
+# to access the gpu cluster. Validate by using the nvidia-smi command
+
+# check if the device has a gpu
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(torch.cuda.is_available())
+if torch.cuda.is_available():
+    device = torch.device("cuda")
+else:
+    device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
 
 # Move model to device
 model.to(device)

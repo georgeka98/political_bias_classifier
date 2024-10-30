@@ -6,8 +6,18 @@ from src.dataset import BiasDataset
 from src.data_loader import load_and_preprocess_data
 
 # Load the saved model and tokenizer
-model = DistilBertForSequenceClassification.from_pretrained("./bias_classifier_model")
-tokenizer = DistilBertTokenizer.from_pretrained("./bias_classifier_model")
+model = DistilBertForSequenceClassification.from_pretrained("./bias_classifier_model", resume_download=True)
+tokenizer = DistilBertTokenizer.from_pretrained("./bias_classifier_model", resume_download=True)
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(torch.cuda.is_available())
+if torch.cuda.is_available():
+    device = torch.device("cuda")
+else:
+    device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+
+# Move model to device
+model.to(device)
 
 # Load the label encoder
 label_encoder = joblib.load("label_encoder.joblib")
@@ -31,7 +41,8 @@ def evaluate_saved_model(model, test_dataset, test_labels, label_encoder):
     with torch.no_grad():
         for i in range(len(test_dataset)):
             # Convert each item in test_dataset.encodings to tensor
-            inputs = {key: torch.tensor([val[i]]) for key, val in test_dataset.encodings.items()}
+            print(i)
+            inputs = {key: torch.tensor([val[i]]).to(model.device) for key, val in test_dataset.encodings.items()}
             outputs = model(**inputs)
             logits = outputs.logits
             predicted_class_id = torch.argmax(logits, dim=1).item()
