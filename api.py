@@ -1,8 +1,11 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from transformers import DistilBertForSequenceClassification, DistilBertTokenizer
 import torch
 import joblib
+import os
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -16,12 +19,22 @@ label_encoder = joblib.load("label_encoder.joblib")  # Ensure this file is saved
 class PredictRequest(BaseModel):
     text: str
 
+# Serve static files from the "static" directory
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Route to serve the index.html file at the root URL
+@app.get("/")
+async def serve_index():
+    return FileResponse(os.path.join("static", "index.html"))
+
 # Define the /predict endpoint
 @app.post("/predict")
 async def predict(request: PredictRequest):
     try:
         # Tokenize the input text
         inputs = tokenizer(request.text, truncation=True, padding=True, max_length=128, return_tensors="pt")
+
+        print(inputs)
         
         # Pass inputs through the model
         with torch.no_grad():
@@ -38,6 +51,7 @@ async def predict(request: PredictRequest):
     except Exception as e:
         # Raise HTTP exception if any error occurs
         raise HTTPException(status_code=500, detail=str(e))
+
     
 
 # curl -X POST "http://127.0.0.1:8000/predict" -H "Content-Type: application/json" -d "{\"text\": \"Iran's Revolutionary Guards seized a British-flagged oil tanker in the Strait of Hormuz last Friday in revenge...\"}"
@@ -45,7 +59,6 @@ async def predict(request: PredictRequest):
 # curl -X POST "http://127.0.0.1:8000/predict" -H "Content-Type: application/json" -d "{\"text\": \"Capitalism promotes individual responsibility and opportunity.\"}"
 # curl -X POST "http://127.0.0.1:8000/predict" -H "Content-Type: application/json" -d "{\"text\": \"Government regulation should be minimized to allow businesses to thrive.\"}"
 # curl -X POST "http://127.0.0.1:8000/predict" -H "Content-Type: application/json" -d "{\"text\": \"Corporations must be held accountable for their environmental impact.\"}"
-
 
 # Left-Leaning Phrases
 # Economic and Social Welfare
@@ -113,3 +126,8 @@ async def predict(request: PredictRequest):
 # "We need leaders who prioritize unity over party politics."
 # "Solutions should come from both liberal and conservative ideas."
 # "Effective governance requires compromise and cooperation."
+
+
+
+
+# uvicorn api:app --reload

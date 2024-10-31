@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Political Bias Classifier</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            max-width: 800px;
+        }
+        h1 {
+            color: #333;
+        }
+        .container {
+            margin-top: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <h1>Political Bias Classifier</h1>
+    <div class="container">
+        <textarea id="inputText" placeholder="Enter text here..."></textarea>
+        <button onclick="classifyText()">Classify Text</button>
+        <div class="result" id="result"></div>
+    </div>
+
+    <script>
+        async function classifyText() {
+            // Get the input text
+            const text = document.getElementById("inputText").value;
+
+            // Check if text is empty
+            if (!text.trim()) {
+                document.getElementById("result").innerText = "Please enter some text.";
+                return;
+            }
+
+            // Prepare the request
+            const response = await fetch("http://127.0.0.1:8000/predict", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ text: text })
+            });
+
+            // Handle the response
+            if (response.ok) {
+                const data = await response.json();
+                document.getElementById("result").innerText = "Predicted Label: " + data.prediction;
+            } else {
+                document.getElementById("result").innerText = "Error: Unable to classify text.";
+            }
+        }
+    </script>
+</body>
+</html>
